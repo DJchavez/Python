@@ -1,0 +1,162 @@
+import random
+
+class Barco:
+    def __init__(self, longitud):
+        self.longitud = longitud
+        self.posiciones = []
+        self.hundido = False
+
+    def colocar_barco(self, posiciones):
+        self.posiciones = posiciones
+
+    def atacar(self, posicion):
+        if posicion in self.posiciones:
+            self.posiciones.remove(posicion)
+            if not self.posiciones: 
+                self.hundido = True
+            return True
+        return False
+
+class Tablero:
+    def __init__(self, tamaño=5):
+        self.tamaño = tamaño
+        self.barcos = []
+        self.tablero = [["O" for _ in range(tamaño)] for _ in range(tamaño)]
+
+    def es_posicion_valida(self, posiciones):
+        for x, y in posiciones:
+            if not (0 <= x < self.tamaño and 0 <= y < self.tamaño):
+                return False
+            if self.tablero[x][y] != "O":
+                return False
+        return True   
+
+    def colocar_barco(self, barco, posiciones):
+        if self.es_posicion_valida(posiciones):
+            for x, y in posiciones:
+                self.tablero[x][y] = "B"
+            barco.colocar_barco(posiciones)
+            self.barcos.append(barco)
+        else:
+            raise ValueError("Posición inválida o repetida")
+
+    def mostrar_tablero(self, ocultar_barcos=False):
+        for fila in self.tablero:
+            for celda in fila:
+                if ocultar_barcos and celda == "B":
+                    print("O", end=" ")
+                else:
+                    print(celda, end=" ")
+            print()
+
+    def recibir_disparo(self, x, y):
+        if self.tablero[x][y] == "B":
+            self.tablero[x][y] = "X"
+            for barco in self.barcos:
+                if barco.atacar((x, y)):
+                    if barco.hundido:
+                        print("¡Hundiste un barco!")
+                    return True
+        elif self.tablero[x][y] == "O":
+            self.tablero[x][y] = "-"
+            return False
+
+    def barcos_hundidos(self):
+        for barco in self.barcos:
+            if not barco.hundido:
+                return False
+        return True
+
+class JuegoBatallaNaval:
+    def __init__(self, tamaño_tablero=5):
+        self.jugador_tablero = Tablero(tamaño_tablero)
+        self.maquina_tablero = Tablero(tamaño_tablero)
+        self.tamaños_barcos = [3, 2]
+        self.jugador_barcos = [Barco(t) for t in self.tamaños_barcos]
+        self.maquina_barcos = [Barco(t) for t in self.tamaños_barcos]
+
+    def generar_posiciones_barco(self, longitud):
+        orientacion = random.choice(['horizontal', 'vertical'])
+        if orientacion == 'horizontal':
+            fila = random.randint(0, self.jugador_tablero.tamaño - 1)
+            columna_inicio = random.randint(0, self.jugador_tablero.tamaño - longitud)
+            return [(fila, columna_inicio + i) for i in range(longitud)]
+        else:
+            fila_inicio = random.randint(0, self.jugador_tablero.tamaño - longitud)
+            columna = random.randint(0, self.jugador_tablero.tamaño - 1)
+            return [(fila_inicio + i, columna) for i in range(longitud)]
+        
+    def colocar_barcos_jugador(self):
+        print("Coloca tus barcos en el tablero:")
+        for barco in self.jugador_barcos:
+            while True:
+                try:
+                    print(f"Coloca tu barco de longitud {barco.longitud}:")
+                    posiciones = []
+                    for _ in range(barco.longitud):
+                        x = int(input("Ingresa la coordenada X: "))
+                        y = int(input("Ingresa la coordenada Y: "))
+                        posiciones.append((x, y))
+                    self.jugador_tablero.colocar_barco(barco, posiciones)
+                    self.jugador_tablero.mostrar_tablero()
+                    break
+                except ValueError:
+                    print("Posiciones inválidas, intenta de nuevo.")
+
+    def colocar_barcos_maquina(self):
+        print("La máquina está colocando sus barcos...")
+        for barco in self.maquina_barcos:
+            while True:
+                try:
+                    posiciones = self.generar_posiciones_barco(barco.longitud)
+                    self.maquina_tablero.colocar_barco(barco, posiciones)
+                    break
+                except ValueError:
+                    continue
+
+    def turno_jugador(self):
+        print("Tu turno de atacar:")
+        while True:
+            try:
+                x = int(input("Ingresa la coordenada X: "))
+                y = int(input("Ingresa la coordenada Y: "))
+                if self.maquina_tablero.recibir_disparo(x, y):
+                    print("¡Le diste a un barco!")
+                else:
+                    print("Fallaste.")
+                print("Tablero de la máquina después de tu ataque:")
+                self.maquina_tablero.mostrar_tablero(ocultar_barcos=True)
+                break
+            except (ValueError, IndexError):
+                print("Posición inválida, intenta de nuevo.")
+      
+
+    def turno_maquina(self):
+        print("Turno de la máquina:")
+        while True:
+            x = random.randint(0, self.jugador_tablero.tamaño - 1)
+            y = random.randint(0, self.jugador_tablero.tamaño - 1)
+            if self.jugador_tablero.tablero[x][y] in ["O", "B"]:
+                if self.jugador_tablero.recibir_disparo(x, y):
+                    print(f"La máquina atacó en ({x}, {y}) y acertó!")
+                else:
+                    print(f"La máquina atacó en ({x}, {y}) y falló.")
+                break
+
+    def jugar(self):
+        self.colocar_barcos_jugador()
+        self.colocar_barcos_maquina()
+
+        while True:
+            self.turno_jugador()
+            if self.maquina_tablero.barcos_hundidos():
+                print("¡Ganaste! Hundiste todos los barcos de la máquina.")
+                break
+
+            self.turno_maquina()
+            if self.jugador_tablero.barcos_hundidos():
+                print("La máquina ganó. Hundió todos tus barcos.")
+                break
+
+juego = JuegoBatallaNaval()
+juego.jugar()
