@@ -1,0 +1,69 @@
+import math
+
+class Estudiantes:
+    def __init__(self,nombre):
+        self.nombre = nombre
+        self.list_cursos = {}
+
+    def registro_calificaciones(self,curso,calificacion):
+         self.list_cursos[curso] = calificacion
+
+    def calcular_promedio(self):
+        if len(self.list_cursos) == 0:
+            return 0
+        else:
+            total_calificacion = sum(self.list_cursos.values())
+            promedio = total_calificacion / len(self.list_cursos)
+            return promedio
+                   
+class SistemaGestion:
+        def __init__(self):
+            self.list_student = []
+
+        def registro_estudiante(self):
+            while True:
+                student = input("Ingrese nombre del estudiante O (SALIR): ")
+                if student.lower() == "salir":
+                    break
+                else:
+                    estudiante = Estudiantes(student)
+                    self.list_student.append(estudiante)
+                    print(f"Estudiante {student} Registrado correctamente")  
+
+        def asignar_calificacion(self, nombre):
+            student = self.buscar_estudiante(nombre)
+            if student:
+                while True:
+                    curso = input("Ingrese el curso o (Salir): ")
+                    if curso.lower() == "salir":
+                        break
+                    else:
+                        calificacion = float(input(f"Ingrese la calificacion para el curso de: {curso} del estudiante {student}"))
+                        student.registro_calificaciones(curso,calificacion)
+
+            else:
+                print(f"No se encontro al estudiante {student}")
+
+        def buscar_estudiante(self, nombre):
+            for student in self.list_student:
+                 if student.nombre == nombre:
+                    return student
+            return None
+        
+        def mostrar_promedio(self,nombre):
+            student = self.buscar_estudiante(nombre)
+            if student:
+                promedio = student.calcular_promedio()
+                print(f"El promedio de {nombre} es: {promedio:.2f}")
+            else:
+                print(f"No se encontro al estudiante {nombre}")
+
+        def mostrar_todos_estudiantes(self):
+            for student in self.list_student():
+                print(f"{student}//{Estudiantes.calcular_promedio(student)}")
+                
+
+sistema2= SistemaGestion()
+sistema2.registro_estudiante()
+sistema2.asignar_calificacion("david")
+sistema2.mostrar_todos_estudiantes()
